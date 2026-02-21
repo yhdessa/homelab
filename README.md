@@ -11,7 +11,7 @@ This is a production-like microservice application:
 - `Docker Compose` — infrastructure orchestration
 
 ## Architecture
-![Architecture_img](https://ibb.co/zVBN7Jv7)
+![Architecture_img](https://i.ibb.co/chZxCLnC/1.png)
 
 - External access: `Nginx:80`
 - `Flask` only works on the internal Docker network (`flweb:5000`)
@@ -60,10 +60,10 @@ docker compose up --build
 After launch:
 
 - Home page: `http://localhost/`
-  ![Home_page_img](https://ibb.co/1YypjBkV)
+  ![Home_page_img](https://i.ibb.co/ymvM7KrT/2.png)
   
 - Counter: `http://localhost/counter`
-  ![Counter_img](  https://ibb.co/s9S1zXWQ)
+  ![Counter_img](https://i.ibb.co/nM21tKPf/3.png)
 
 ## Project goal
 
