@@ -12,10 +12,7 @@ This is a production-like microservice application:
 
 ## Architecture
 
-```text
-User -> Nginx -> Flask -> Redis
-                       -> Postgres (not yet used)
-```
+https://ibb.co/zVBN7Jv7
 
 - External access: `Nginx:80`
 - `Flask` only works on the internal Docker network (`flweb:5000`)
@@ -64,7 +61,10 @@ docker compose up --build
 After launch:
 
 - Home page: `http://localhost/`
+  https://ibb.co/1YypjBkV
+  
 - Counter: `http://localhost/counter`
+  https://ibb.co/s9S1zXWQ
 
 ## Project goal
 
