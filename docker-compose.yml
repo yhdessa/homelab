@@ -10,20 +10,32 @@ services:
       - flweb
     networks:
       - app-network
+    restart: unless-stopped
 
   flweb:
     build: .
     container_name: flask_app
-    env_file:
-      - .env
     depends_on:
       redis:
         condition: service_healthy
+      db:
+        condition: service_healthy
     networks:
       - app-network
+    secrets:
+      - db_user
+      - db_password
+      - db_name
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:5000/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   redis:
-    image: redis:latest
+    image: redis:7-alpine
     container_name: redis
     networks:
       - app-network
@@ -32,18 +44,31 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+      start_period: 2s
+    restart: unless-stopped
 
   db:
     image: postgres:16-alpine
     container_name: db_web
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: appdb
+      POSTGRES_USER_FILE:     /run/secrets/db_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_DB_FILE:       /run/secrets/db_name
+    secrets:
+      - db_user
+      - db_password
+      - db_name
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 8s
+    restart: unless-stopped
 
 networks:
   app-network:
@@ -51,3 +76,11 @@ networks:
 
 volumes:
   postgres_data:
+
+secrets:
+  db_user:
+    file: ./secrets/db_user.txt
+  db_password:
+    file: ./secrets/db_password.txt
+  db_name:
+    file: ./secrets/db_name.txt
