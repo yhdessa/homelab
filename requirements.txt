@@ -1,5 +1,8 @@
-Flask
-redis
-Werkzeug
-jaraco.context>=6.1.0 
-wheel>=0.46.2       
+Flask>=3.1.0
+redis>=5.0.0
+python-dotenv>=1.0.0
+gunicorn>=25.1.0
+Werkzeug>=3.1.0
+jaraco.context>=6.1.0
+wheel>=0.46.2
+pip>=26.0
