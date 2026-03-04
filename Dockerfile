@@ -4,10 +4,14 @@ WORKDIR /app
 COPY requirements.txt .
 
 RUN apk add --no-cache build-base \
-    && pip install --no-cache-dir --upgrade pip wheel setuptools \
+    && pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
 FROM python:3.11-alpine
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    TMPDIR=/tmp
 
 WORKDIR /app
 
@@ -19,4 +23,4 @@ COPY --chown=appuser:appgroup . .
 
 USER appuser
 
-CMD ["python", "sc.py"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--threads", "4", "--timeout", "30", "--worker-tmp-dir", "/tmp", "--pid", "/tmp/gunicorn.pid", "--access-logfile", "-", "sc:app"]
