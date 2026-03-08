@@ -114,6 +114,18 @@ services:
       retries: 5
       start_period: 2s
     restart: unless-stopped
+  
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    volumes:
+      - prometheus_data:/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
 
   db:
     build:
@@ -151,3 +163,4 @@ networks:
 
 volumes:
   postgres_data:
+  prometheus_data:
