@@ -126,7 +126,20 @@ services:
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
-
+  
+  node-exporter:
+    container_name: node-exporter
+    image: prom/node-exporter:v1.9.0
+    command:
+     - "--path.rootfs=/host"
+    volumes:
+      - "/:/host:ro,rslave"
+    pid: host
+    network_mode: host
+    ports:
+      - "9100:9100" 
+    restart: unless-stopped
+  
   db:
     build:
       context: .
