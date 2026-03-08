@@ -1,6 +1,8 @@
 services:
   nginx:
-    image: nginx:alpine
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
     container_name: reverse_proxy
     ports:
       - "80:8080"
@@ -13,17 +15,12 @@ services:
       - no-new-privileges:true
     read_only: true
     tmpfs:
-      - /var/cache/nginx
-      - /var/run
-      - /var/log/nginx
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 128M
-        reservations:
-          cpus: '0.1'
-          memory: 64M
+      - /var/cache/nginx:size=10m
+      - /var/run:size=5m
+      - /var/log/nginx:size=10m
+    cpus: 0.5 
+    mem_limit: 128M
+    mem_reservation: 64M
     networks:
       - app-network
     restart: unless-stopped
@@ -96,7 +93,7 @@ services:
       start_period: 20s
 
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     container_name: redis
     command: ["redis-server", "--save", "", "--appendonly", "no"]
     security_opt:
@@ -119,7 +116,9 @@ services:
     restart: unless-stopped
 
   db:
-    image: postgres:16-alpine
+    build:
+      context: .
+      dockerfile: postgres/Dockerfile
     container_name: db_web
     environment:
       POSTGRES_USER: ${DB_USER:?DB_USER is required in .env}
@@ -139,11 +138,11 @@ services:
         reservations:
           memory: 256M
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      test: ["CMD", "sh", "-c", "pgrep postgres || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 8s
+      start_period: 10s
     restart: unless-stopped
 
 networks:
