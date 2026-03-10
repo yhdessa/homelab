@@ -4,6 +4,18 @@ from dotenv import load_dotenv
 from flask import Flask
 import redis
 
+import logging
+from pythonjsonlogger import jsonlogger
+
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+formatter = jsonlogger.JsonFormatter(
+    fmt='%(asctime)s %(levelname)s %(message)s %(pathname)s %(funcName)s %(lineno)d',
+    json_ensure_ascii=False
+)
+handler.setFormatter(formatter)
+log.handlers = [handler]
 load_dotenv()
 
 DB_HOST = os.environ["DB_HOST"]
