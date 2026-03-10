@@ -182,18 +182,15 @@ services:
       - app-network
 
   grafana:
-    image: grafana/grafana:11.6.0 
+    image: grafana/grafana:11.6.0
     container_name: grafana
     ports:
       - "3001:3000"
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioningd
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin123
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    env_file:
+      - .env
     restart: unless-stopped
     networks:
       - app-network
