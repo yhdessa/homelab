@@ -2,33 +2,45 @@ name: Docker Build & Trivy Scan
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build-and-scan:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image and load
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build app Docker image
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: Dockerfile
+          context: ./app
+          file: ./app/Dockerfile
           push: false
           load: true
-          tags: temp-image:latest
+          tags: temp-app-image:latest
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
 
-      - name: Run Trivy vulnerability scanner
+      - name: Scan app image with Trivy
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'temp-image:latest'
+          image-ref: 'temp-app-image:latest'
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
@@ -36,20 +48,28 @@ jobs:
           severity: 'CRITICAL,HIGH'
           timeout: 10m
 
-      - name: Upload Trivy report 
+      - name: Upload Trivy report artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: trivy-report
           path: trivy-report.*
+          retention-days: 7
 
-      - name: Push to GHCR 
+      - name: Push app image to GHCR
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && success()
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: Dockerfile
+          context: ./app
+          file: ./app/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/app:latest
+            ghcr.io/${{ github.repository }}/app:${{ github.sha }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
