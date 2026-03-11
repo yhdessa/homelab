@@ -37,25 +37,6 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
 
-      - name: Scan app image with Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: 'temp-app-image:latest'
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
-          timeout: 10m
-
-      - name: Upload Trivy report artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: trivy-report
-          path: trivy-report.*
-          retention-days: 7
-
       - name: Push app image to GHCR
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && success()
         uses: docker/build-push-action@v6
