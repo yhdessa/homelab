@@ -1,8 +1,8 @@
 services:
   nginx:
     build:
-      context: .
-      dockerfile: nginx/Dockerfile
+      context: ./nginx
+      dockerfile: Dockerfile
     container_name: reverse_proxy
     ports:
       - "80:80"
@@ -25,26 +25,21 @@ services:
     restart: unless-stopped
 
   flweb:
-    build: .
+    build: ./app
     container_name: flask_app
     command:
       [
         "gunicorn",
-        "--bind",
-        "0.0.0.0:5000",
-        "--workers",
-        "2",
-        "--threads",
-        "4",
-        "--timeout",
-        "30",
-        "--worker-tmp-dir",
-        "/tmp",
-        "--pid",
-        "/tmp/gunicorn.pid",
-        "--access-logfile",
-        "-",
-        "sc:app",
+        "--bind", "0.0.0.0:5000",
+        "--workers", "2",
+        "--threads", "4",
+        "--timeout", "30",
+        "--worker-tmp-dir", "/tmp",
+        "--pid", "/tmp/gunicorn.pid",
+        "--access-logfile", "-",
+        "--error-logfile", "-",
+        "--config", "/app/gunicorn_json_logging.py",
+        "src.app:app"
       ]
     environment:
       DB_HOST: ${DB_HOST:-db_web}
@@ -84,7 +79,7 @@ services:
           "CMD",
           "python",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/', timeout=3)",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/', timeout=3)"
         ]
       interval: 15s
       timeout: 5s
@@ -119,7 +114,7 @@ services:
     container_name: prometheus
     volumes:
       - prometheus_data:/prometheus
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
       - "9090:9090"
     restart: unless-stopped
@@ -134,23 +129,23 @@ services:
       - --storage.tsdb.path=/prometheus
       - --web.console.libraries=/usr/share/prometheus/console_libraries
       - --web.console.templates=/usr/share/prometheus/consoles
-    
+
   node-exporter:
     container_name: node-exporter
     image: prom/node-exporter:v1.9.0
     command:
-     - "--path.rootfs=/host"
+      - "--path.rootfs=/host"
     volumes:
       - "/:/host:ro,rslave"
     pid: host
     ports:
-      - "9100:9100" 
+      - "9100:9100"
     restart: unless-stopped
     networks:
-        - app-network
+      - app-network
 
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.51.0 
+    image: gcr.io/cadvisor/cadvisor:v0.51.0
     container_name: cadvisor
     privileged: true
     devices:
@@ -188,7 +183,7 @@ services:
       - "3001:3000"
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./infra/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
     env_file:
       - .env
     restart: unless-stopped
@@ -199,8 +194,8 @@ services:
 
   db:
     build:
-      context: .
-      dockerfile: postgres/Dockerfile
+      context: ./postgres
+      dockerfile: Dockerfile
     container_name: db_web
     environment:
       POSTGRES_USER: ${DB_USER:?DB_USER is required in .env}
@@ -233,7 +228,7 @@ services:
     ports:
       - "3100:3100"
     volumes:
-      - ./loki:/etc/loki
+      - ./infra/monitoring/loki/local-config.yaml:/etc/loki/local-config.yaml:ro
       - loki_data:/loki
     command: -config.file=/etc/loki/local-config.yaml
     networks:
@@ -244,9 +239,7 @@ services:
     image: grafana/promtail:3.2.0
     container_name: promtail
     volumes:
-      - ./promtail-config.yaml:/etc/promtail/config.yml
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /var/run/docker.sock:/var/run/docker.sock
+    - ./infre/monitoring/loki:/etc/loki:ro
     command: -config.file=/etc/promtail/config.yml
     networks:
       - app-network
