@@ -5,7 +5,8 @@ COPY requirements.txt .
 
 RUN apk add --no-cache build-base \
     && pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir -r requirements.txt \
+    && apk add --no-cache zlib=1.3.2-r0
 
 FROM python:3.11-alpine
 
