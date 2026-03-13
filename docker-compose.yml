@@ -20,6 +20,11 @@ services:
       - /var/log/nginx:size=10m
     cpus: 0.5
     mem_limit: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - app-network
     restart: unless-stopped
@@ -72,6 +77,11 @@ services:
           cpus: '1.0'
           memory: 512M
           pids: 150
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
     healthcheck:
       test:
@@ -220,6 +230,11 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
 
   loki:
