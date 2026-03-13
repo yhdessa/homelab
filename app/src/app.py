@@ -74,6 +74,11 @@ def get_db_connection():
 def home():
     return "Homelab DevSecOps"
 
+@app.route("/counter")
+def counter():
+    cnt = redis_client.incr("counter")
+    return f"Counter: {cnt}"
+
 @app.route("/health")
 def health():
     status = {"status": "healthy"}
