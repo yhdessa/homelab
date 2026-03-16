@@ -270,7 +270,7 @@ services:
     image: grafana/promtail:3.2.0
     container_name: promtail
     volumes:
-    - ./infre/monitoring/loki:/etc/loki:ro
+    - ./infra/monitoring/loki:/etc/loki:ro
     command: -config.file=/etc/promtail/config.yml
     networks:
       - app-network
