@@ -1,14 +1,14 @@
-import os
 import logging
+import os
 from logging.handlers import RotatingFileHandler
-from typing import Dict, Any
+from typing import Any, Dict
 
+import psycopg
+import redis
 from dotenv import load_dotenv
 from flask import Flask
-import redis
-from redis.exceptions import ConnectionError as RedisConnectionError
 from pythonjsonlogger import jsonlogger
-import psycopg
+from redis.exceptions import ConnectionError as RedisConnectionError
 
 load_dotenv()
 
