@@ -23,7 +23,9 @@ REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 if not all([DB_USER, DB_PASSWORD, DB_NAME]):
     raise ValueError("Missing required DB environment variables")
 
-DATABASE_URL = f"postgresql+psycopg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:5432/{DB_NAME}"
+DATABASE_URL = (
+    f"postgresql+psycopg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:5432/{DB_NAME}"
+)
 
 app = Flask(__name__)
 app.config["DEBUG"] = DEBUG
@@ -98,6 +100,7 @@ def counter() -> str:
 @app.route("/health")
 def health() -> tuple[Dict[str, Any], int]:
     status: Dict[str, str] = {"status": "healthy"}
+
     if redis_client:
         try:
             redis_client.ping()
