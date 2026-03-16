@@ -23,9 +23,7 @@ REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 if not all([DB_USER, DB_PASSWORD, DB_NAME]):
     raise ValueError("Missing required DB environment variables")
 
-DATABASE_URL = (
-    f"postgresql+psycopg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:5432/{DB_NAME}"
-)
+DATABASE_URL = f"postgresql+psycopg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:5432/{DB_NAME}"
 
 app = Flask(__name__)
 app.config["DEBUG"] = DEBUG
@@ -38,7 +36,7 @@ json_formatter = jsonlogger.JsonFormatter(
     fmt="%(asctime)s %(levelname)s %(message)s \
         %(pathname)s %(funcName)s %(lineno)d",
     json_ensure_ascii=False,
-    datefmt="%Y-%m-%dT%H:%M:%S%z"
+    datefmt="%Y-%m-%dT%H:%M:%S%z",
 )
 
 console_handler = logging.StreamHandler()
@@ -118,8 +116,7 @@ def health() -> tuple[Dict[str, Any], int]:
     except Exception:
         status["database"] = "error"
 
-    code = 200 if all(v == "ok" for v in status.values() \
-        if isinstance(v, str)) else 503
+    code = 200 if all(v == "ok" for v in status.values() if isinstance(v, str)) else 503
     return jsonify(status), code
 
 
