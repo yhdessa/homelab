@@ -35,7 +35,8 @@ logger = logging.getLogger("app")
 logger.setLevel(logging.INFO)
 
 json_formatter = jsonlogger.JsonFormatter(
-    fmt="%(asctime)s %(levelname)s %(message)s %(pathname)s %(funcName)s %(lineno)d",
+    fmt="%(asctime)s %(levelname)s %(message)s \
+        %(pathname)s %(funcName)s %(lineno)d",
     json_ensure_ascii=False,
     datefmt="%Y-%m-%dT%H:%M:%S%z"
 )
@@ -117,7 +118,8 @@ def health() -> tuple[Dict[str, Any], int]:
     except Exception:
         status["database"] = "error"
 
-    code = 200 if all(v == "ok" for v in status.values() if isinstance(v, str)) else 503
+    code = 200 if all(v == "ok" for v in status.values() \
+        if isinstance(v, str)) else 503
     return jsonify(status), code
 
 
