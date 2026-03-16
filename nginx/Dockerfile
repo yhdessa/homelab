@@ -1,6 +1,7 @@
 FROM nginx:1.29-alpine
 
-RUN apk add --no-cache openssl && \
+RUN apk update && apk upgrade --no-cache && \
+    apk add --no-cache openssl && \
     mkdir -p /etc/nginx/certs && \
     openssl req -x509 -nodes -days 3650 \
       -newkey rsa:2048 \
