@@ -19,6 +19,8 @@ DB_NAME = os.getenv("DB_NAME")
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+HOST = os.getenv("APP_HOST", "127.0.0.1")
+PORT = int(os.getenv("APP_PORT", "5000"))
 
 if not all([DB_USER, DB_PASSWORD, DB_NAME]):
     raise ValueError("Missing required DB environment variables")
@@ -134,4 +136,4 @@ def health() -> tuple[Dict[str, Any], int]:
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=DEBUG)
+    app.run(host=HOST, port=PORT, debug=DEBUG)
