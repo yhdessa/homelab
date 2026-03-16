@@ -46,9 +46,14 @@ console_handler = logging.StreamHandler()
 console_handler.setFormatter(json_formatter)
 logger.addHandler(console_handler)
 
+LOG_PATH = os.getenv("LOG_PATH", "/var/log/app.log")
+
 file_handler = RotatingFileHandler(
-    "/tmp/app.log", maxBytes=10 * 1024 * 1024, backupCount=5
+    LOG_PATH,
+    maxBytes=10 * 1024 * 1024,
+    backupCount=5,
 )
+
 file_handler.setFormatter(json_formatter)
 logger.addHandler(file_handler)
 
