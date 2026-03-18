@@ -15,7 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       python: ${{ steps.filter.outputs.python }}
-      docker: ${{ steps.filter.outputs.docker }}
     steps:
       - uses: actions/checkout@v4
 
@@ -28,11 +27,6 @@ jobs:
               - 'app/src/**.py'
               - 'app/requirements.txt'
               - 'tests/**'
-            docker:
-              - 'app/**'
-              - 'nginx/**'
-              - 'Dockerfile'
-              - 'docker-compose.yml'
 
   lint:
     needs: changes
@@ -66,8 +60,7 @@ jobs:
       - name: Dependency safety check
         run: safety check --full-report || true
 
-  build-scan-push-app:
-    needs: lint
+  build-scan-app:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -86,7 +79,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build app image
-        id: build
         uses: docker/build-push-action@v6
         with:
           context: ./app
@@ -131,7 +123,6 @@ jobs:
           retention-days: 7
 
   build-scan-nginx:
-    needs: lint
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -150,7 +141,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Nginx image
-        id: build-nginx
         uses: docker/build-push-action@v6
         with:
           context: ./nginx
