@@ -161,6 +161,7 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
           timeout: 10m
+          secret-ignore-path: '/etc/nginx/certs/selfsigned.key'
 
       - name: Push Nginx image to GHCR
         if: success() && (github.event_name == 'push' || startsWith(github.ref, 'refs/tags/v'))
