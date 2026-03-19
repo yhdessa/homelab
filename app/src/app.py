@@ -1,33 +1,37 @@
-import logging
 import os
+import logging
 from logging.handlers import RotatingFileHandler
-from typing import Any, Dict
+from typing import Dict, Any
 
-import psycopg
-import redis
 from dotenv import load_dotenv
-from flask import Flask
-from pythonjsonlogger import jsonlogger
+from flask import Flask, jsonify
+import redis
 from redis.exceptions import ConnectionError as RedisConnectionError
+from pythonjsonlogger import jsonlogger
+import psycopg
 
 load_dotenv()
 
+try:
+    DB_USER = open("/run/secrets/db_user").read().strip()
+    DB_PASSWORD = open("/run/secrets/db_password").read().strip()
+    DB_NAME = open("/run/secrets/db_name").read().strip()
+except FileNotFoundError:
+    DB_USER = os.getenv("DB_USER")
+    DB_PASSWORD = os.getenv("DB_PASSWORD")
+    DB_NAME = os.getenv("DB_NAME")
+
 DB_HOST = os.getenv("DB_HOST", "db_web")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_NAME = os.getenv("DB_NAME")
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
-HOST = os.getenv("APP_HOST", "127.0.0.1")
-PORT = int(os.getenv("APP_PORT", "5000"))
+APP_HOST = os.getenv("APP_HOST", "0.0.0.0")
+APP_PORT = int(os.getenv("APP_PORT", "5000"))
 
 if not all([DB_USER, DB_PASSWORD, DB_NAME]):
-    raise ValueError("Missing required DB environment variables")
+    raise ValueError("Missing required DB credentials (check secrets or .env)")
 
-DATABASE_URL = (
-    f"postgresql+psycopg://{DB_USER}:{DB_PASSWORD}" f"@{DB_HOST}:5432/{DB_NAME}"
-)
+DATABASE_URL = f"postgresql+psycopg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:5432/{DB_NAME}"
 
 app = Flask(__name__)
 app.config["DEBUG"] = DEBUG
@@ -37,8 +41,7 @@ logger = logging.getLogger("app")
 logger.setLevel(logging.INFO)
 
 json_formatter = jsonlogger.JsonFormatter(
-    fmt="%(asctime)s %(levelname)s %(message)s \
-        %(pathname)s %(funcName)s %(lineno)d",
+    fmt="%(asctime)s %(levelname)s %(message)s %(pathname)s %(funcName)s %(lineno)d",
     json_ensure_ascii=False,
     datefmt="%Y-%m-%dT%H:%M:%S%z",
 )
@@ -47,14 +50,11 @@ console_handler = logging.StreamHandler()
 console_handler.setFormatter(json_formatter)
 logger.addHandler(console_handler)
 
-LOG_PATH = os.getenv("LOG_PATH", "/var/log/app.log")
-
 file_handler = RotatingFileHandler(
-    LOG_PATH,
+    "/tmp/app.log",
     maxBytes=10 * 1024 * 1024,
     backupCount=5,
 )
-
 file_handler.setFormatter(json_formatter)
 logger.addHandler(file_handler)
 
@@ -107,7 +107,7 @@ def counter() -> str:
 
 @app.route("/health")
 def health() -> tuple[Dict[str, Any], int]:
-    status: Dict[str, str] = {"status": "healthy"}
+    status: Dict[str, str] = {status": "healthy"}
 
     if redis_client:
         try:
@@ -126,9 +126,8 @@ def health() -> tuple[Dict[str, Any], int]:
         status["database"] = "error"
 
     code = 200 if all(v == "ok" for v in status.values() if isinstance(v, str)) else 503
-
-    return status, code
+    return jsonify(status), code
 
 
 if __name__ == "__main__":
-    app.run(host=HOST, port=PORT, debug=DEBUG)
+    app.run(host=APP_HOST, port=APP_PORT, debug=DEBUG)
