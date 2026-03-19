@@ -1,14 +1,14 @@
-import os
 import logging
+import os
 from logging.handlers import RotatingFileHandler
-from typing import Dict, Any
+from typing import Any, Dict
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify
+import psycopg
 import redis
 from redis.exceptions import ConnectionError as RedisConnectionError
 from pythonjsonlogger import jsonlogger
-import psycopg
 
 load_dotenv()
 
@@ -107,7 +107,7 @@ def counter() -> str:
 
 @app.route("/health")
 def health() -> tuple[Dict[str, Any], int]:
-    status: Dict[str, str] = {status": "healthy"}
+    status: Dict[str, str] = {"status": "healthy"}
 
     if redis_client:
         try:
