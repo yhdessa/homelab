@@ -12,7 +12,7 @@ ENV PATH="/venv/bin:$PATH"
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip wheel setuptools \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir --upgrade-deps -r requirements.txt
 
 FROM python:3.11-slim
 
@@ -26,6 +26,9 @@ RUN groupadd -r appgroup && useradd -r -g appgroup -m appuser
 COPY --chown=appuser:appgroup . .
 
 USER appuser
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=5 \
+  CMD curl -f http://localhost:5000/health || exit 1
 
 CMD ["gunicorn", \
      "--bind", "0.0.0.0:5000", \
