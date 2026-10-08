@@ -166,7 +166,8 @@ services:
     container_name: node-exporter
     image: prom/node-exporter:v1.9.0
     # Linux-only: mounts host / and uses host pid namespace.
-    # Opt-in on Linux servers: `docker compose --profile linux up -d`.
+    # On Docker Desktop (Mac/Windows) it fails to start, so it is
+    # opt-in on Linux servers: `docker compose --profile linux up -d`.
     profiles:
       - linux
     command:
@@ -187,8 +188,8 @@ services:
     image: gcr.io/cadvisor/cadvisor:v0.51.0
     container_name: cadvisor
     # Linux-only: needs host /sys, /var/lib/docker, /dev/disk, /cgroup.
-    # On Docker Desktop (Mac/Windows) these paths don't exist, so the
-    # service is opt-in: `docker compose --profile linux up -d`.
+    # On Docker Desktop (Mac/Windows) these paths don't exist, so it is
+    # opt-in on Linux servers: `docker compose --profile linux up -d`.
     profiles:
       - linux
     privileged: true

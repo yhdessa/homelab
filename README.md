@@ -1,5 +1,7 @@
 # Microservice App (Flask + Nginx + Redis + Postgres)
 
+> 🌐 **Language:** English | [Русский](README.ru.md)
+
 ## About the project
 
 Production-like microservice application with clear separation of concerns:
@@ -19,19 +21,20 @@ The app demonstrates:
 
 ## Architecture
 
-External clients → `Nginx:80` → `Flask (flweb:5000)`  
+External clients → `Nginx:80/443` → `Flask (flweb:5000)`  
 `Flask` ↔ `Redis` (state/counter)  
-`Flask` can connect to `Postgres` (prepared but not yet used)
+`Flask` ↔ `Postgres` (health-checked on `/health`)
 
 ![Architecture diagram](https://i.ibb.co/chZxCLnC/1.png)
 
 All internal communication happens over the Docker network.  
-External ports (except Nginx 80) are not exposed.
+User traffic enters through Nginx; observability UIs
+(Prometheus `:9090`, Grafana `:3001`, Loki `:3100`) are exposed for local use.
 
 ## Components
 
 ### Nginx
-- Listens on port 80
+- Listens on ports 80 (HTTP → redirect) and 443 (HTTPS)
 - Proxies requests to `flweb:5000`
 - Adds security headers
 - Hides internal service structure
@@ -40,9 +43,11 @@ External ports (except Nginx 80) are not exposed.
 - Serves:
   - `/` — main page
   - `/counter` — incrementing counter example
+  - `/health` — Redis + Postgres health check (JSON)
+  - `/metrics` — Prometheus metrics
 - Uses **Redis** to persist counter value
+- Checks **Postgres** connectivity on `/health`
 - Runs with **Gunicorn** (not Flask dev server)
-- Prepared for future Postgres integration
 
 ### Redis
 - Stores counter state between requests
@@ -50,8 +55,17 @@ External ports (except Nginx 80) are not exposed.
   → minimal data at rest (security choice)
 
 ### Postgres
-- Database service is running
-- Ready for next steps (schema creation, Flask-SQLAlchemy integration, etc.)
+- Stores relational data; connectivity is verified on `/health`
+- Credentials are injected via Docker secrets (`secrets/` + `.env` fallback)
+
+## Observability
+
+- **Prometheus** (`:9090`) scrapes `flask`, `nginx` exporter and itself
+  (`cadvisor` / `node-exporter` jobs are Linux-only, see below)
+- **Grafana** (`:3001`, `admin/admin`) ships pre-provisioned Prometheus +
+  Loki datasources and the **Homelab overview** dashboard
+- **Loki** (`:3100`) collects container logs via Promtail
+  (works fully on Linux hosts; see notes below)
 
 ## Security baseline
 
@@ -78,18 +92,17 @@ DB_NAME
 DEBUG
 REDIS_HOST
 REDIS_PORT
+GRAFANA_ADMIN_USER
+GRAFANA_ADMIN_PASSWORD
 ```
 
-For local development:
-
-```bash
-cp .env.example .env
-# then edit .env if needed
-```
+Secrets (`secrets/db_*`) and the local TLS cert are git-ignored —
+`scripts/init-dev.sh` creates them on first run (see Launch).
 
 ## Launch
 
 ```bash
+./scripts/init-dev.sh   # one-time: creates git-ignored secrets/, local TLS cert, certbot webroot
 docker compose up --build
 ```
 
