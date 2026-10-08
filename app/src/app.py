@@ -6,7 +6,8 @@ from typing import Any, Dict
 import psycopg
 import redis
 from dotenv import load_dotenv
-from flask import Flask, jsonify
+from flask import Flask, Response, jsonify
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, generate_latest
 from pythonjsonlogger import jsonlogger
 from redis.exceptions import ConnectionError as RedisConnectionError
 
@@ -62,6 +63,12 @@ logger.addHandler(file_handler)
 
 logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
+REQUESTS_TOTAL = Counter(
+    "app_requests_total",
+    "Total HTTP requests served by endpoint.",
+    ["endpoint"],
+)
+
 redis_client: redis.Redis | None = None
 if REDIS_HOST:
     try:
@@ -91,11 +98,13 @@ def get_db_connection() -> psycopg.Connection:
 
 @app.route("/")
 def home() -> str:
+    REQUESTS_TOTAL.labels(endpoint="/").inc()
     return "Homelab DevSecOps"
 
 
 @app.route("/counter")
 def counter() -> str:
+    REQUESTS_TOTAL.labels(endpoint="/counter").inc()
     if redis_client is None:
         return "Redis not configured", 503
 
@@ -131,6 +140,11 @@ def health() -> tuple[Dict[str, Any], int]:
     status["status"] = "healthy" if healthy else "unhealthy"
     code = 200 if healthy else 503
     return jsonify(status), code
+
+
+@app.route("/metrics")
+def metrics() -> Response:
+    return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
 
 
 if __name__ == "__main__":

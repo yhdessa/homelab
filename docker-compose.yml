@@ -145,10 +145,11 @@ services:
       - "9090:9090"
     restart: unless-stopped
     networks:
+      # frontend: Grafana -> Prometheus + host access to UI/API
+      # backend: Prometheus -> exporters (backend-only) and flweb
       - frontend
+      - backend
     depends_on:
-      - cadvisor
-      - node-exporter
       - nginx-prometheus-exporter
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -164,6 +165,10 @@ services:
   node-exporter:
     container_name: node-exporter
     image: prom/node-exporter:v1.9.0
+    # Linux-only: mounts host / and uses host pid namespace.
+    # Opt-in on Linux servers: `docker compose --profile linux up -d`.
+    profiles:
+      - linux
     command:
       - "--path.rootfs=/host"
     volumes:
@@ -181,6 +186,11 @@ services:
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.51.0
     container_name: cadvisor
+    # Linux-only: needs host /sys, /var/lib/docker, /dev/disk, /cgroup.
+    # On Docker Desktop (Mac/Windows) these paths don't exist, so the
+    # service is opt-in: `docker compose --profile linux up -d`.
+    profiles:
+      - linux
     privileged: true
     devices:
       - /dev/kmsg:/dev/kmsg
@@ -224,6 +234,9 @@ services:
       - ./infra/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
     env_file:
       - .env
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
     restart: unless-stopped
     networks:
       - frontend
@@ -271,11 +284,16 @@ services:
   loki:
     image: grafana/loki:3.2.0
     container_name: loki
+    ports:
+      - "3100:3100"
     volumes:
       - ./infra/monitoring/loki/local-config.yaml:/etc/loki/local-config.yaml:ro
       - loki_data:/loki
     command: -config.file=/etc/loki/local-config.yaml
     networks:
+      # frontend: host access to :3100 (backend is internal-only,
+      # published ports on it are unreachable from Docker Desktop)
+      - frontend
       - backend
     restart: unless-stopped
     logging:
