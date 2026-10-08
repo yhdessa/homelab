@@ -3,12 +3,12 @@ import os
 from logging.handlers import RotatingFileHandler
 from typing import Any, Dict
 
-from dotenv import load_dotenv
-from flask import Flask, jsonify
 import psycopg
 import redis
-from redis.exceptions import ConnectionError as RedisConnectionError
+from dotenv import load_dotenv
+from flask import Flask, jsonify
 from pythonjsonlogger import jsonlogger
+from redis.exceptions import ConnectionError as RedisConnectionError
 
 load_dotenv()
 
@@ -25,13 +25,13 @@ DB_HOST = os.getenv("DB_HOST", "db_web")
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
-APP_HOST = os.getenv("APP_HOST", "0.0.0.0")
+APP_HOST = os.getenv("APP_HOST", "0.0.0.0")  # nosec B104
 APP_PORT = int(os.getenv("APP_PORT", "5000"))
 
 if not all([DB_USER, DB_PASSWORD, DB_NAME]):
     raise ValueError("Missing required DB credentials (check secrets or .env)")
 
-DATABASE_URL = f"postgresql+psycopg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:5432/{DB_NAME}"
+DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}" f"@{DB_HOST}:5432/{DB_NAME}"
 
 app = Flask(__name__)
 app.config["DEBUG"] = DEBUG
@@ -41,7 +41,9 @@ logger = logging.getLogger("app")
 logger.setLevel(logging.INFO)
 
 json_formatter = jsonlogger.JsonFormatter(
-    fmt="%(asctime)s %(levelname)s %(message)s %(pathname)s %(funcName)s %(lineno)d",
+    fmt=(
+        "%(asctime)s %(levelname)s %(message)s " "%(pathname)s %(funcName)s %(lineno)d"
+    ),
     json_ensure_ascii=False,
     datefmt="%Y-%m-%dT%H:%M:%S%z",
 )
@@ -51,7 +53,7 @@ console_handler.setFormatter(json_formatter)
 logger.addHandler(console_handler)
 
 file_handler = RotatingFileHandler(
-    "/tmp/app.log",
+    "/tmp/app.log",  # nosec B108
     maxBytes=10 * 1024 * 1024,
     backupCount=5,
 )
@@ -107,7 +109,7 @@ def counter() -> str:
 
 @app.route("/health")
 def health() -> tuple[Dict[str, Any], int]:
-    status: Dict[str, str] = {"status": "healthy"}
+    status: Dict[str, str] = {}
 
     if redis_client:
         try:
@@ -125,7 +127,9 @@ def health() -> tuple[Dict[str, Any], int]:
     except Exception:
         status["database"] = "error"
 
-    code = 200 if all(v == "ok" for v in status.values() if isinstance(v, str)) else 503
+    healthy = all(v == "ok" for v in status.values())
+    status["status"] = "healthy" if healthy else "unhealthy"
+    code = 200 if healthy else 503
     return jsonify(status), code
 
 

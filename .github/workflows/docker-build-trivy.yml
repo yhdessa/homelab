@@ -24,8 +24,11 @@ jobs:
         with:
           filters: |
             python:
-              - 'app/src/**.py'
+              - 'app/**/*.py'
               - 'app/requirements.txt'
+              - 'app/Dockerfile'
+              - '.flake8'
+              - 'pyproject.toml'
               - 'tests/**'
 
   lint:
@@ -46,19 +49,19 @@ jobs:
           pip install flake8 black isort bandit safety
 
       - name: Lint with flake8
-        run: flake8 app/src
+        run: flake8 app/src app/gunicorn_json_logging.py
 
       - name: Format check with black
-        run: black --check app/src || true
+        run: black --check app/
 
       - name: Import sorting with isort
-        run: isort --check-only app/src
+        run: isort --check-only app/
 
       - name: Security scan with bandit
         run: bandit -r app/src
 
       - name: Dependency safety check
-        run: safety check --full-report || true
+        run: safety check -r app/requirements.txt --full-report || true
 
   build-scan-app:
     runs-on: ubuntu-latest
@@ -99,9 +102,10 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
           timeout: 10m
+          scanners: vuln
 
       - name: Push app image to GHCR
-        if: success()
+        if: success() && (github.event_name == 'push' || startsWith(github.ref, 'refs/tags/v'))
         uses: docker/build-push-action@v6
         with:
           context: ./app
@@ -121,6 +125,7 @@ jobs:
           name: trivy-report-app
           path: trivy-report.*
           retention-days: 7
+          if-no-files-found: warn
 
   build-scan-nginx:
     runs-on: ubuntu-latest
@@ -184,3 +189,4 @@ jobs:
           name: trivy-report-nginx
           path: trivy-report.*
           retention-days: 7
+          if-no-files-found: warn

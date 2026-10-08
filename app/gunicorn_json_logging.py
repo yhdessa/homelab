@@ -1,13 +1,16 @@
 import logging
+
 from pythonjsonlogger import jsonlogger
 
 access_logger = logging.getLogger("gunicorn.access")
 access_logger.setLevel(logging.INFO)
 
 json_formatter = jsonlogger.JsonFormatter(
-    fmt="%(asctime)s %(levelname)s %(message)s %(pathname)s %(funcName)s %(lineno)d",
+    fmt=(
+        "%(asctime)s %(levelname)s %(message)s " "%(pathname)s %(funcName)s %(lineno)d"
+    ),
     json_ensure_ascii=False,
-    datefmt="%Y-%m-%dT%H:%M:%S%z"
+    datefmt="%Y-%m-%dT%H:%M:%S%z",
 )
 
 console_handler = logging.StreamHandler()
